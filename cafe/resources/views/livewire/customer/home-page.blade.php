@@ -28,12 +28,12 @@
 
     <!-- Products Grid -->
     <div class="px-4 pb-24">
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-2 gap-4" wire:key="products-grid">
             @foreach($products as $product)
-                <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+                <div wire:key="product-{{ $product->id }}" class="bg-white rounded-2xl shadow-md overflow-hidden">
                     <div class="h-40 bg-gray-200 relative">
                         @if($product->foto)
-                            <img src="{{ asset('storage/' . $product->foto) }}" alt="{{ $product->nama }}" class="w-full h-full object-cover">
+                            <img src="{{ $product->foto }}" alt="{{ $product->nama }}" class="w-full h-full object-cover">
                         @else
                             <div class="flex items-center justify-center h-full text-gray-400">
                                 <i class="fas fa-image text-4xl"></i>

@@ -12,8 +12,15 @@
         @forelse($cart as $productId => $item)
             <div class="bg-white rounded-xl shadow-sm p-4">
                 <div class="flex items-start gap-4">
-                    <div class="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0"></div>
-                    
+                    <div class="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
+                    @if(!empty($item['foto']))
+                        <img src="{{ $item['foto'] }}" alt="{{ $item['nama'] }}" class="w-full h-full object-cover">
+                    @else
+                        <div class="w-full h-full flex items-center justify-center">
+                            <i class="fas fa-image text-gray-400"></i>
+                        </div>
+                    @endif
+                    </div>
                     <div class="flex-1">
                         <h3 class="font-semibold mb-1">{{ $item['nama'] }}</h3>
                         <p class="text-green-700 font-bold">{{ format_rupiah($item['harga']) }}</p>

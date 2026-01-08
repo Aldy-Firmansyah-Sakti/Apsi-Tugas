@@ -63,6 +63,7 @@ class HomePage extends Component
                 'product_id' => $product->id,
                 'nama' => $product->nama,
                 'harga' => $product->harga,
+                'foto' => $product->foto,
                 'quantity' => 1,
                 'notes' => '',
             ];
