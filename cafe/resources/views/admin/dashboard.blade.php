@@ -46,14 +46,6 @@
                     </svg>
                     Riwayat
                 </a>
-                
-                <a href="{{ route('admin.settings.index') }}" class="flex items-center px-6 py-3 text-green-200 hover:bg-green-700 hover:text-white transition duration-200">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    Pengaturan
-                </a>
 
                 <!-- Logout -->
                 <form method="POST" action="{{ route('admin.logout') }}" class="mt-8">
@@ -78,21 +70,28 @@
                     <div class="flex items-center space-x-4">
                         <!-- Search -->
                         <div class="relative">
-                            <input type="text" placeholder="Search" class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <input type="text" 
+                                   id="search-input" 
+                                   placeholder="Cari pesanan, nama, atau meja..." 
+                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent w-64">
                             <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
+                            <!-- Search Results Dropdown -->
+                            <div id="search-results" class="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-96 overflow-y-auto z-50 hidden">
+                                <div id="search-loading" class="p-4 text-center text-gray-500 hidden">
+                                    <svg class="animate-spin h-5 w-5 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Mencari...
+                                </div>
+                                <div id="search-content"></div>
+                            </div>
                         </div>
                         
                         <!-- Time -->
-                        <div class="text-gray-600 font-medium">10.42</div>
-                        
-                        <!-- Profile -->
-                        <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                        </div>
+                        <div class="text-gray-600 font-medium" id="current-time">{{ date('H.i') }}</div>
                     </div>
                 </div>
             </header>
@@ -415,6 +414,144 @@
         setInterval(() => {
             location.reload();
         }, 30000);
+
+        // Update time every second
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeString = `${hours}.${minutes}`;
+            
+            const timeElement = document.getElementById('current-time');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+
+        // Search functionality
+        let searchTimeout;
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+        const searchLoading = document.getElementById('search-loading');
+        const searchContent = document.getElementById('search-content');
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                searchResults.classList.add('hidden');
+                return;
+            }
+
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+            
+            // Show loading
+            searchResults.classList.remove('hidden');
+            searchLoading.classList.remove('hidden');
+            searchContent.innerHTML = '';
+
+            // Debounce search
+            searchTimeout = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        });
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.add('hidden');
+            }
+        });
+
+        function performSearch(query) {
+            fetch(`/admin/search?q=${encodeURIComponent(query)}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                searchLoading.classList.add('hidden');
+                
+                if (data.success && data.results.length > 0) {
+                    displaySearchResults(data.results);
+                } else {
+                    searchContent.innerHTML = `
+                        <div class="p-4 text-center text-gray-500">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Tidak ada hasil ditemukan
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                searchLoading.classList.add('hidden');
+                searchContent.innerHTML = `
+                    <div class="p-4 text-center text-red-500">
+                        Terjadi kesalahan saat mencari
+                    </div>
+                `;
+            });
+        }
+
+        function displaySearchResults(results) {
+            let html = '';
+            
+            results.forEach(order => {
+                const statusColor = getStatusColor(order.status);
+                const paymentColor = order.status_bayar === 'paid' ? 'text-green-600' : 'text-red-600';
+                
+                html += `
+                    <div class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onclick="goToOrder(${order.id})">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-800">${order.kode_order}</h4>
+                                <p class="text-sm text-gray-600">${order.nama_pemesan} - Meja ${order.table_number || 'N/A'}</p>
+                                ${order.items ? `<p class="text-xs text-gray-500 mt-1">${order.items}</p>` : ''}
+                            </div>
+                            <div class="text-right ml-4">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor.bg} ${statusColor.text}">
+                                    ${order.status}
+                                </span>
+                                <p class="text-sm ${paymentColor} mt-1">${order.status_bayar === 'paid' ? 'Sudah Bayar' : 'Belum Bayar'}</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-500">${order.created_at}</span>
+                            <span class="font-semibold text-green-600">Rp ${order.total_harga}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            searchContent.innerHTML = html;
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'pending': { bg: 'bg-gray-100', text: 'text-gray-800' },
+                'confirmed': { bg: 'bg-blue-100', text: 'text-blue-800' },
+                'processing': { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+                'ready': { bg: 'bg-purple-100', text: 'text-purple-800' },
+                'completed': { bg: 'bg-green-100', text: 'text-green-800' },
+                'cancelled': { bg: 'bg-red-100', text: 'text-red-800' }
+            };
+            return colors[status] || colors['pending'];
+        }
+
+        function goToOrder(orderId) {
+            window.location.href = `/admin/orders`;
+        }
+
+        // Update immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
     </script>
 </body>
 </html>

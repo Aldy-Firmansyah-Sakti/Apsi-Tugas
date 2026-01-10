@@ -89,6 +89,8 @@
             <!-- Footer -->
             <div class="text-center mt-6">
                 <p class="text-cream-200 text-sm">© 2026 Café X. Semua hak dilindungi.</p>
+                <!-- Real-time Clock -->
+                <div class="text-cream-200 text-sm mt-2" id="current-time">{{ date('H.i') }}</div>
                 <a href="{{ route('admin.login') }}" class="text-cream-200 text-xs hover:text-white transition duration-300 mt-2 inline-block">
                     Admin Login
                 </a>
@@ -106,5 +108,24 @@
         .hover\:bg-cream-300:hover { background-color: #f3e8d3; }
         .border-green-200 { border-color: #bbf7d0; }
     </style>
+
+    <script>
+        // Update time every second
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeString = `${hours}.${minutes}`;
+            
+            const timeElement = document.getElementById('current-time');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+
+        // Update immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
 </body>
 </html>

@@ -16,6 +16,7 @@ Route::get('/customer/cart/{session_id}', [OrderController::class, 'cart'])->nam
 Route::post('/customer/update-cart', [OrderController::class, 'updateCart'])->name('customer.update-cart');
 Route::post('/customer/remove-from-cart', [OrderController::class, 'removeFromCart'])->name('customer.remove-from-cart');
 Route::post('/customer/checkout', [OrderController::class, 'checkout'])->name('customer.checkout');
+Route::get('/customer/order-status/{id}', [OrderController::class, 'orderStatus'])->name('customer.order-status');
 
 // Admin Routes
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -27,6 +28,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Protected admin routes
     Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/search', [AdminDashboardController::class, 'search'])->name('search');
         Route::resource('/menu', MenuController::class);
         
         // Order management routes
@@ -37,7 +39,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('/orders/{order}/cancel', [\App\Http\Controllers\Admin\OrderController::class, 'cancelOrder'])->name('orders.cancel');
         
         Route::get('/history', [\App\Http\Controllers\Admin\HistoryController::class, 'index'])->name('history.index');
-        Route::get('/settings', function() { return view('admin.settings.index'); })->name('settings.index');
     });
 });
 

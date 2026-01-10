@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Menu - Café X</title>
+    <title>Edit Menu - Café X</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-cream-100 min-h-screen">
@@ -60,7 +60,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                             </svg>
                         </a>
-                        <h1 class="text-2xl font-semibold text-gray-800">Tambah Menu</h1>
+                        <h1 class="text-2xl font-semibold text-gray-800">Edit Menu: {{ $product->nama }}</h1>
                     </div>
                     <div class="text-gray-600 font-medium" id="current-time">{{ date('H.i') }}</div>
                 </div>
@@ -69,8 +69,22 @@
             <main class="p-6">
                 <div class="max-w-2xl mx-auto">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <form method="POST" action="{{ route('admin.menu.store') }}" enctype="multipart/form-data">
+                        <!-- Current Image Preview -->
+                        @if($product->foto)
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Gambar Saat Ini</label>
+                            <div class="w-32 h-32 bg-gray-200 rounded-lg overflow-hidden">
+                                <img src="{{ $product->image_url }}" 
+                                     alt="{{ $product->nama }}" 
+                                     class="w-full h-full object-cover"
+                                     onerror="this.src='{{ get_default_product_image() }}'">
+                            </div>
+                        </div>
+                        @endif
+
+                        <form method="POST" action="{{ route('admin.menu.update', $product) }}" enctype="multipart/form-data">
                             @csrf
+                            @method('PUT')
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Nama Menu -->
@@ -79,7 +93,7 @@
                                     <input type="text" 
                                            id="nama" 
                                            name="nama" 
-                                           value="{{ old('nama') }}"
+                                           value="{{ old('nama', $product->nama) }}"
                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('nama') border-red-500 @enderror"
                                            required>
                                     @error('nama')
@@ -96,7 +110,7 @@
                                             required>
                                         <option value="">Pilih Kategori</option>
                                         @foreach($categories as $category)
-                                            <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                            <option value="{{ $category->id }}" {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>
                                                 {{ $category->nama }}
                                             </option>
                                         @endforeach
@@ -112,7 +126,7 @@
                                     <input type="number" 
                                            id="harga" 
                                            name="harga" 
-                                           value="{{ old('harga') }}"
+                                           value="{{ old('harga', $product->harga) }}"
                                            min="0"
                                            step="1000"
                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('harga') border-red-500 @enderror"
@@ -128,7 +142,7 @@
                                     <input type="number" 
                                            id="stock" 
                                            name="stock" 
-                                           value="{{ old('stock') }}"
+                                           value="{{ old('stock', $product->stock) }}"
                                            min="0"
                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('stock') border-red-500 @enderror">
                                     @error('stock')
@@ -155,7 +169,7 @@
                                     <input type="url" 
                                            id="foto_url" 
                                            name="foto_url" 
-                                           value="{{ old('foto_url') }}"
+                                           value="{{ old('foto_url', filter_var($product->foto, FILTER_VALIDATE_URL) ? $product->foto : '') }}"
                                            placeholder="https://example.com/image.jpg"
                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('foto_url') border-red-500 @enderror">
                                     <p class="mt-1 text-xs text-gray-500">URL akan diprioritaskan jika keduanya diisi</p>
@@ -170,7 +184,7 @@
                                     <textarea id="deskripsi" 
                                               name="deskripsi" 
                                               rows="3"
-                                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('deskripsi') border-red-500 @enderror">{{ old('deskripsi') }}</textarea>
+                                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('deskripsi') border-red-500 @enderror">{{ old('deskripsi', $product->deskripsi) }}</textarea>
                                     @error('deskripsi')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -185,7 +199,7 @@
                                 </a>
                                 <button type="submit" 
                                         class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition duration-200">
-                                    Simpan Menu
+                                    Update Menu
                                 </button>
                             </div>
                         </form>

@@ -37,3 +37,32 @@ if (!function_exists('log_activity')) {
         }
     }
 }
+
+if (!function_exists('get_product_image_url')) {
+    function get_product_image_url($foto)
+    {
+        if (empty($foto)) {
+            return null;
+        }
+        
+        // Check if it's already a full URL
+        if (filter_var($foto, FILTER_VALIDATE_URL)) {
+            return $foto;
+        }
+        
+        // Check if it starts with http or https
+        if (str_starts_with($foto, 'http://') || str_starts_with($foto, 'https://')) {
+            return $foto;
+        }
+        
+        // Otherwise, treat as local storage path
+        return asset('storage/' . $foto);
+    }
+}
+
+if (!function_exists('get_default_product_image')) {
+    function get_default_product_image()
+    {
+        return 'https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=No+Image';
+    }
+}

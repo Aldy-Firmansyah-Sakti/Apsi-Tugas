@@ -55,7 +55,17 @@ class Product extends Model
     // Accessors
     public function getFormattedPriceAttribute()
     {
-        return 'Rp ' . number_format($this->harga, 0, ',', '.');
+        return 'Rp ' . number_format($this->harga ?? 0, 0, ',', '.');
+    }
+
+    public function getImageUrlAttribute()
+    {
+        return get_product_image_url($this->foto) ?: get_default_product_image();
+    }
+
+    public function getHasImageAttribute()
+    {
+        return !empty($this->foto);
     }
 
     // Mutators

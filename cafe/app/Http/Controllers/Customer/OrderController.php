@@ -97,13 +97,17 @@ class OrderController extends Controller
                 'product_id' => $product->id,
                 'name' => $product->nama,
                 'price' => $product->harga,
+                'foto' => $product->image_url, // Add product image URL
                 'quantity' => $request->quantity,
             ];
         }
 
         session([$sessionKey => $orderSession]);
 
-        return response()->json(['success' => true, 'message' => 'Item ditambahkan ke keranjang']);
+        return response()->json([
+            'success' => true, 
+            'message' => 'Item ditambahkan ke keranjang'
+        ]);
     }
 
     public function cart($sessionId)
@@ -131,7 +135,7 @@ class OrderController extends Controller
         $request->validate([
             'session_id' => 'required|string',
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1|max:99',
+            'quantity' => 'required|integer|min:1|max:50',
         ]);
 
         $sessionKey = 'order_session_' . $request->session_id;
@@ -238,5 +242,37 @@ class OrderController extends Controller
         session()->forget($sessionKey);
 
         return view('customer.order-success', compact('order'));
+    }
+
+    public function orderStatus($id)
+    {
+        $order = Order::with(['orderItems.product', 'table'])->findOrFail($id);
+        return view('customer.order-status', compact('order'));
+    }
+
+    public function getOrderStatus($id)
+    {
+        try {
+            $order = Order::with(['orderItems.product', 'table'])->findOrFail($id);
+            
+            return response()->json([
+                'success' => true,
+                'order' => [
+                    'id' => $order->id,
+                    'kode_order' => $order->kode_order,
+                    'status' => $order->status,
+                    'status_bayar' => $order->status_bayar,
+                    'nama_pemesan' => $order->nama_pemesan,
+                    'total_harga' => $order->total_harga,
+                    'created_at' => $order->created_at->format('Y-m-d H:i:s'),
+                    'updated_at' => $order->updated_at->format('Y-m-d H:i:s'),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order tidak ditemukan'
+            ], 404);
+        }
     }
 }

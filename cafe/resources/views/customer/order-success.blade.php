@@ -10,8 +10,10 @@
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-center h-16">
+            <div class="flex items-center justify-between h-16">
                 <h1 class="text-2xl font-bold text-green-800">Café X</h1>
+                <!-- Real-time Clock -->
+                <div class="text-gray-600 font-medium" id="current-time">{{ date('H.i') }}</div>
             </div>
         </div>
     </header>
@@ -89,6 +91,11 @@
 
             <!-- Actions -->
             <div class="space-y-3">
+                <a href="{{ route('customer.order-status', $order->id) }}" 
+                   class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition duration-200 inline-block">
+                    Lacak Status Pesanan
+                </a>
+                
                 <a href="{{ route('home') }}" 
                    class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition duration-200 inline-block">
                     Pesan Lagi
@@ -123,5 +130,24 @@
             }
         }
     </style>
+
+    <script>
+        // Update time every second
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeString = `${hours}.${minutes}`;
+            
+            const timeElement = document.getElementById('current-time');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+
+        // Update immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
 </body>
 </html>

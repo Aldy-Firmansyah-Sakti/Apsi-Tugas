@@ -63,7 +63,7 @@ class HomePage extends Component
                 'product_id' => $product->id,
                 'nama' => $product->nama,
                 'harga' => $product->harga,
-                'foto' => $product->foto,
+                'foto' => $product->image_url, // Use the computed URL
                 'quantity' => 1,
                 'notes' => '',
             ];

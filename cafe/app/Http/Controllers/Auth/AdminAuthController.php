@@ -24,36 +24,40 @@ class AdminAuthController extends Controller
 
         $credentials = $request->only('email', 'password');
         
-        // Debug: Check if user exists
+        // Check if user exists and is admin
         $user = User::where('email', $credentials['email'])->first();
+        
         if (!$user) {
             return back()->withErrors([
                 'email' => 'User dengan email tersebut tidak ditemukan.',
-            ]);
+            ])->withInput($request->only('email'));
         }
 
-        // Debug: Check if password matches
-        if (!Hash::check($credentials['password'], $user->password)) {
-            return back()->withErrors([
-                'email' => 'Password salah.',
-            ]);
-        }
-
-        // Debug: Check role
         if ($user->role !== 'admin') {
             return back()->withErrors([
-                'email' => 'Akses ditolak. User role: ' . $user->role,
-            ]);
+                'email' => 'Akses ditolak. Hanya admin yang dapat login.',
+            ])->withInput($request->only('email'));
         }
 
-        if (Auth::attempt($credentials)) {
+        if (!$user->is_active) {
+            return back()->withErrors([
+                'email' => 'Akun Anda tidak aktif. Hubungi administrator.',
+            ])->withInput($request->only('email'));
+        }
+
+        // Attempt login
+        if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended('/admin/dashboard');
+            
+            // Log activity
+            log_activity('admin_login', 'Admin login: ' . $user->name);
+            
+            return redirect()->intended(route('admin.dashboard'));
         }
 
         return back()->withErrors([
-            'email' => 'Login gagal karena alasan tidak diketahui.',
-        ]);
+            'email' => 'Email atau password salah.',
+        ])->withInput($request->only('email'));
     }
 
     public function logout(Request $request)

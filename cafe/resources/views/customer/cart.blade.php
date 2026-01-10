@@ -21,8 +21,13 @@
                     <h1 class="text-2xl font-bold text-green-800">Keranjang</h1>
                 </div>
                 
-                <div class="text-sm text-gray-600">
-                    {{ $orderSession['customer_name'] }} - Meja {{ $orderSession['table_number'] }}
+                <div class="flex items-center space-x-4">
+                    <!-- Real-time Clock -->
+                    <div class="text-gray-600 font-medium" id="current-time">{{ date('H.i') }}</div>
+                    
+                    <div class="text-sm text-gray-600">
+                        {{ $orderSession['customer_name'] }} - Meja {{ $orderSession['table_number'] }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -55,51 +60,70 @@
                         <div class="divide-y divide-gray-100">
                             @foreach($cart as $productId => $item)
                             <div class="p-6" id="cart-item-{{ $productId }}">
-                                <div class="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
-                                    <!-- Product Info -->
-                                    <div class="flex-1">
-                                        <h3 class="font-medium text-gray-800">{{ $item['name'] }}</h3>
-                                        <p class="text-sm text-gray-500">Rp {{ number_format($item['price'], 0, ',', '.') }} per item</p>
+                                <div class="flex items-start space-x-4">
+                                    <!-- Product Image -->
+                                    <div class="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                                        @if(isset($item['foto']) && $item['foto'])
+                                            <img src="{{ $item['foto'] }}" 
+                                                 alt="{{ $item['name'] }}" 
+                                                 class="w-full h-full object-cover"
+                                                 onerror="this.src='{{ get_default_product_image() }}'">
+                                        @else
+                                            <img src="{{ get_default_product_image() }}" 
+                                                 alt="{{ $item['name'] }}" 
+                                                 class="w-full h-full object-cover">
+                                        @endif
                                     </div>
                                     
-                                    <!-- Controls and Total -->
-                                    <div class="flex items-center justify-between sm:justify-end space-x-4">
-                                        <!-- Quantity Controls -->
-                                        <div class="flex items-center space-x-2 bg-gray-50 rounded-lg p-1">
-                                            <!-- Decrease Button -->
-                                            <button onclick="updateQuantity({{ $productId }}, {{ $item['quantity'] - 1 }})" 
-                                                    class="w-8 h-8 rounded-md bg-white hover:bg-gray-100 flex items-center justify-center transition duration-200 shadow-sm {{ $item['quantity'] <= 1 ? 'opacity-50 cursor-not-allowed' : '' }}"
-                                                    {{ $item['quantity'] <= 1 ? 'disabled' : '' }}>
-                                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                                                </svg>
-                                            </button>
+                                    <!-- Product Info and Controls -->
+                                    <div class="flex-1">
+                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
+                                            <!-- Product Info -->
+                                            <div class="flex-1">
+                                                <h3 class="font-medium text-gray-800">{{ $item['name'] }}</h3>
+                                                <p class="text-sm text-gray-500">Rp {{ number_format($item['price'], 0, ',', '.') }} per item</p>
+                                            </div>
                                             
-                                            <!-- Quantity Display -->
-                                            <span class="w-10 text-center font-medium text-gray-800 text-sm" id="quantity-{{ $productId }}">{{ $item['quantity'] }}</span>
-                                            
-                                            <!-- Increase Button -->
-                                            <button onclick="updateQuantity({{ $productId }}, {{ $item['quantity'] + 1 }})" 
-                                                    class="w-8 h-8 rounded-md bg-white hover:bg-gray-100 flex items-center justify-center transition duration-200 shadow-sm">
-                                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                                </svg>
-                                            </button>
+                                            <!-- Controls and Total -->
+                                            <div class="flex items-center justify-between sm:justify-end space-x-4">
+                                                <!-- Quantity Controls -->
+                                                <div class="flex items-center space-x-2 bg-gray-50 rounded-lg p-1">
+                                                    <!-- Decrease Button -->
+                                                    <button onclick="updateQuantity({{ $productId }}, 'decrease')" 
+                                                            class="w-8 h-8 rounded-md bg-white hover:bg-gray-100 flex items-center justify-center transition duration-200 shadow-sm {{ $item['quantity'] <= 1 ? 'opacity-50 cursor-not-allowed' : '' }}"
+                                                            {{ $item['quantity'] <= 1 ? 'disabled' : '' }}>
+                                                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                                        </svg>
+                                                    </button>
+                                                    
+                                                    <!-- Quantity Display -->
+                                                    <span class="w-10 text-center font-medium text-gray-800 text-sm" id="quantity-{{ $productId }}">{{ $item['quantity'] }}</span>
+                                                    
+                                                    <!-- Increase Button -->
+                                                    <button onclick="updateQuantity({{ $productId }}, 'increase')" 
+                                                            class="w-8 h-8 rounded-md bg-white hover:bg-gray-100 flex items-center justify-center transition duration-200 shadow-sm">
+                                                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                                
+                                                <!-- Item Total -->
+                                                <div class="text-right min-w-[80px]">
+                                                    <p class="font-semibold text-gray-800" id="item-total-{{ $productId }}">Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}</p>
+                                                </div>
+                                                
+                                                <!-- Remove Button -->
+                                                <button onclick="removeItem({{ $productId }})" 
+                                                        class="w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 flex items-center justify-center transition duration-200 text-red-600"
+                                                        title="Hapus item">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
-                                        
-                                        <!-- Item Total -->
-                                        <div class="text-right min-w-[80px]">
-                                            <p class="font-semibold text-gray-800" id="item-total-{{ $productId }}">Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}</p>
-                                        </div>
-                                        
-                                        <!-- Remove Button -->
-                                        <button onclick="removeItem({{ $productId }})" 
-                                                class="w-8 h-8 rounded-md bg-red-50 hover:bg-red-100 flex items-center justify-center transition duration-200 text-red-600"
-                                                title="Hapus item">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -207,7 +231,19 @@
         // Cart data for calculations
         let cartData = @json($cart);
         
-        function updateQuantity(productId, newQuantity) {
+        function updateQuantity(productId, action) {
+            let currentQuantity = cartData[productId] ? cartData[productId].quantity : 1;
+            let newQuantity;
+            
+            if (action === 'increase') {
+                newQuantity = currentQuantity + 1;
+            } else if (action === 'decrease') {
+                newQuantity = Math.max(1, currentQuantity - 1);
+            } else {
+                // If action is a number (for backward compatibility)
+                newQuantity = parseInt(action);
+            }
+            
             if (newQuantity < 1) return;
             
             fetch('{{ route("customer.update-cart") }}', {
@@ -286,7 +322,6 @@
         function updateCartUI(productId, newQuantity) {
             const quantityElement = document.getElementById('quantity-' + productId);
             const itemTotalElement = document.getElementById('item-total-' + productId);
-            const decreaseButton = document.querySelector(`button[onclick="updateQuantity(${productId}, ${newQuantity - 1})"]`);
             
             if (quantityElement) {
                 quantityElement.textContent = newQuantity;
@@ -297,26 +332,16 @@
                 itemTotalElement.textContent = 'Rp ' + formatNumber(itemTotal);
             }
             
-            // Update button states
-            const newDecreaseButton = document.querySelector(`button[onclick="updateQuantity(${productId}, ${newQuantity - 1})"]`);
-            const newIncreaseButton = document.querySelector(`button[onclick="updateQuantity(${productId}, ${newQuantity + 1})"]`);
-            
-            if (newDecreaseButton) {
+            // Update decrease button state
+            const decreaseButton = document.querySelector(`#cart-item-${productId} button[onclick*="decrease"]`);
+            if (decreaseButton) {
                 if (newQuantity <= 1) {
-                    newDecreaseButton.classList.add('opacity-50', 'cursor-not-allowed');
-                    newDecreaseButton.disabled = true;
+                    decreaseButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    decreaseButton.disabled = true;
                 } else {
-                    newDecreaseButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                    newDecreaseButton.disabled = false;
+                    decreaseButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    decreaseButton.disabled = false;
                 }
-            }
-            
-            // Update onclick attributes
-            if (newDecreaseButton) {
-                newDecreaseButton.setAttribute('onclick', `updateQuantity(${productId}, ${newQuantity - 1})`);
-            }
-            if (newIncreaseButton) {
-                newIncreaseButton.setAttribute('onclick', `updateQuantity(${productId}, ${newQuantity + 1})`);
             }
         }
         
@@ -373,6 +398,23 @@
                 });
             }
         });
+
+        // Update time every second
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeString = `${hours}.${minutes}`;
+            
+            const timeElement = document.getElementById('current-time');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+
+        // Update immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
     </script>
 </body>
 </html>

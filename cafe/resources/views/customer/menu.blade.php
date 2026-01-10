@@ -6,6 +6,15 @@
     <title>Menu - Café X</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- Preload critical images -->
+    @foreach($categories->take(1) as $categoryProducts)
+        @foreach($categoryProducts->take(3) as $product)
+            @if($product->image_url)
+                <link rel="preload" as="image" href="{{ $product->image_url }}">
+            @endif
+        @endforeach
+    @endforeach
 </head>
 <body class="bg-cream-100 min-h-screen">
     <!-- Header -->
@@ -20,6 +29,9 @@
                 </div>
                 
                 <div class="flex items-center space-x-4">
+                    <!-- Real-time Clock -->
+                    <div class="text-gray-600 font-medium" id="current-time">{{ date('H.i') }}</div>
+                    
                     <button onclick="viewCart()" class="relative bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200">
                         <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0h15M17 21a2 2 0 100-4 2 2 0 000 4zM9 21a2 2 0 100-4 2 2 0 000 4z"></path>
@@ -47,24 +59,47 @@
             </div>
         </div>
 
+        <!-- Category Filter -->
+        <div class="mb-8">
+            <div class="flex flex-wrap justify-center gap-3">
+                <button onclick="filterByCategory('all')" 
+                        class="category-filter-btn active px-6 py-3 rounded-full font-medium transition duration-200 bg-green-600 text-white hover:bg-green-700">
+                    All
+                </button>
+                <button onclick="filterByCategory('drinks')" 
+                        class="category-filter-btn px-6 py-3 rounded-full font-medium transition duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Drinks
+                </button>
+                <button onclick="filterByCategory('snacks')" 
+                        class="category-filter-btn px-6 py-3 rounded-full font-medium transition duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Snacks
+                </button>
+                <button onclick="filterByCategory('maincourse')" 
+                        class="category-filter-btn px-6 py-3 rounded-full font-medium transition duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Main Course
+                </button>
+            </div>
+        </div>
+
         <!-- Menu Categories -->
         @foreach($categories as $categoryName => $categoryProducts)
-        <div class="mb-12">
+        <div class="mb-12 category-section" data-category="{{ strtolower($categoryName) }}">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">{{ $categoryName }}</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($categoryProducts as $product)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden menu-item" data-name="{{ strtolower($product->nama) }}">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden menu-item hover:shadow-md" 
+                     data-name="{{ strtolower($product->nama) }}" 
+                     data-category="{{ strtolower($categoryName) }}">
                     <!-- Product Image -->
-                    <div class="h-48 bg-gray-200 relative">
-                        @if($product->foto)
-                            <img src="{{ asset('storage/' . $product->foto) }}" alt="{{ $product->nama }}" class="w-full h-full object-cover">
-                        @else
-                            <div class="w-full h-full flex items-center justify-center">
-                                <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                            </div>
-                        @endif
+                    <div class="h-48 bg-gray-200 relative overflow-hidden">
+                        <div class="image-placeholder" id="placeholder-{{ $product->id }}"></div>
+                        <img src="{{ $product->image_url }}" 
+                             alt="{{ $product->nama }}" 
+                             class="opacity-0"
+                             loading="lazy"
+                             decoding="async"
+                             onload="this.style.opacity='1'; document.getElementById('placeholder-{{ $product->id }}').style.display='none';"
+                             onerror="this.src='{{ get_default_product_image() }}'; this.style.opacity='1'; document.getElementById('placeholder-{{ $product->id }}').style.display='none';">
                     </div>
 
                     <!-- Product Info -->
@@ -107,6 +142,91 @@
 
     <style>
         .bg-cream-100 { background-color: #fdf8f0; }
+        
+        .category-filter-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .category-filter-btn.active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
+        }
+        
+        .category-filter-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* Prevent layout shift and improve image loading */
+        .menu-item {
+            transition: transform 0.2s ease-in-out;
+            will-change: transform;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        
+        .menu-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Ensure consistent image container size */
+        .menu-item .h-48 {
+            min-height: 12rem;
+            max-height: 12rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Smooth image loading */
+        .menu-item img {
+            transition: opacity 0.3s ease-in-out;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Stable placeholder */
+        .image-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        /* Reduce animation for better performance */
+        * {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+        
+        /* Grid stability */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+        
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
     </style>
 
     <script>
@@ -173,20 +293,96 @@
             }, 3000);
         }
 
-        // Search functionality
-        document.getElementById('search-menu').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
+        // Category filter functionality (optimized)
+        function filterByCategory(category) {
+            const categoryButtons = document.querySelectorAll('.category-filter-btn');
+            const categorySections = document.querySelectorAll('.category-section');
             const menuItems = document.querySelectorAll('.menu-item');
             
-            menuItems.forEach(item => {
-                const itemName = item.getAttribute('data-name');
-                if (itemName.includes(searchTerm)) {
-                    item.style.display = 'block';
+            // Use requestAnimationFrame for smooth animations
+            requestAnimationFrame(() => {
+                // Update active button
+                categoryButtons.forEach(btn => {
+                    btn.classList.remove('active', 'bg-green-600', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                });
+                
+                event.target.classList.remove('bg-gray-200', 'text-gray-700');
+                event.target.classList.add('active', 'bg-green-600', 'text-white');
+                
+                // Clear search when filtering by category
+                document.getElementById('search-menu').value = '';
+                
+                if (category === 'all') {
+                    // Show all categories and items
+                    categorySections.forEach(section => {
+                        section.style.display = 'block';
+                    });
+                    menuItems.forEach(item => {
+                        item.style.display = 'block';
+                    });
                 } else {
-                    item.style.display = 'none';
+                    // Hide all sections first
+                    categorySections.forEach(section => {
+                        section.style.display = 'none';
+                    });
+                    
+                    // Show only selected category
+                    const targetSection = document.querySelector(`[data-category="${category}"]`);
+                    if (targetSection) {
+                        targetSection.style.display = 'block';
+                    }
+                    
+                    // Show all items in the selected category
+                    menuItems.forEach(item => {
+                        const itemCategory = item.getAttribute('data-category');
+                        if (itemCategory === category) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
                 }
             });
+        }
+
+        // Debounced search for better performance
+        let searchTimeout;
+        document.getElementById('search-menu').addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase();
+                const menuItems = document.querySelectorAll('.menu-item');
+                
+                requestAnimationFrame(() => {
+                    menuItems.forEach(item => {
+                        const itemName = item.getAttribute('data-name');
+                        if (itemName.includes(searchTerm)) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }, 150); // Debounce 150ms
         });
+
+        // Update time every second
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeString = `${hours}.${minutes}`;
+            
+            const timeElement = document.getElementById('current-time');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+
+        // Update immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
     </script>
 </body>
 </html>
